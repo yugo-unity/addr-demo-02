@@ -213,8 +213,11 @@ public class PlayerData
 		    CoroutineHandler.StartStaticCoroutine(ThemeDatabase.LoadDatabase());
         }
 
-        m_Instance.saveFile = Application.persistentDataPath + "/save.bin";
 
+#if true
+        NewSave();
+#else
+        m_Instance.saveFile = Application.persistentDataPath + "/save.bin";
         if (File.Exists(m_Instance.saveFile))
         {
             // If we have a save, we read it.
@@ -225,6 +228,7 @@ public class PlayerData
             // If not we create one with default data.
 			NewSave();
         }
+#endif
 
         m_Instance.CheckMissionsCount();
     }
@@ -257,6 +261,7 @@ public class PlayerData
 
     public void Read()
     {
+#if false
         BinaryReader r = new BinaryReader(new FileStream(saveFile, FileMode.Open));
 
         int ver = r.ReadInt32();
@@ -385,10 +390,12 @@ public class PlayerData
         }
 
         r.Close();
+#endif
     }
 
     public void Save()
     {
+#if false
         BinaryWriter w = new BinaryWriter(new FileStream(saveFile, FileMode.OpenOrCreate));
 
         w.Write(s_Version);
@@ -457,6 +464,7 @@ public class PlayerData
         w.Write(tutorialDone);
 
         w.Close();
+#endif
     }
 
 
