@@ -4,6 +4,7 @@ public class LicenceDisplayer : MonoBehaviour
 {
     void Start ()
     {
+        Debug.Log("[LicenceDisplayer]Started.");
         PlayerData.Create();
 
 	    if(PlayerData.instance.licenceAccepted)

@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
 
     protected void OnEnable()
     {
-        PlayerData.Create();
+        // PlayerData.Create(DebugDisableTutorial);
 
         s_Instance = this;
 

@@ -33,13 +33,27 @@ public class ThemeDatabase
             {
                 if (op != null)
                 {
-                    if(!themeDataList.ContainsKey(op.themeName))
-                        themeDataList.Add(op.themeName, op);
+                    if(!themeDataList.ContainsKey(op.Name))
+                        themeDataList.Add(op.Name, op);
                 }
             });
 
             m_Loaded = true;
-        }
 
+            ReflectDefaultThemeToPlayerData();
+        }
     }
+
+    static public void ReflectDefaultThemeToPlayerData()
+    {
+        foreach (var pair in themeDataList)
+        {
+            var data = pair.Value;
+            if (data.IsOwnOnStart && !PlayerData.instance.themes.Contains(data.Name))
+            {
+                PlayerData.instance.AddTheme(data.Name);
+            }
+        }
+    }
+
 }

@@ -36,7 +36,7 @@ public class PlayerData
     public int premium;
     public Dictionary<Consumable.ConsumableType, int> consumables = new Dictionary<Consumable.ConsumableType, int>();   // Inventory of owned consumables and quantity.
 
-    public List<string> characters = new List<string>();    // Inventory of characters owned.
+    public  List<string> characters = new List<string>();    // Inventory of characters owned.
     public int usedCharacter;                               // Currently equipped character.
     public int usedAccessory = -1;
     public List<string> characterAccessories = new List<string>();  // List of owned accessories, in the form "charName:accessoryName".
@@ -61,7 +61,11 @@ public class PlayerData
     // This will allow us to add data even after production, and so keep all existing save STILL valid. See loading & saving for how it work.
     // Note in a real production it would probably reset that to 1 before release (as all dev save don't have to be compatible w/ final product)
     // Then would increment again with every subsequent patches. We kept it to its dev value here for teaching purpose. 
-    static int s_Version = 12; 
+    static int s_Version = 12;
+
+    public static bool DebugDisableTutorial { get; set; }  = false;
+    public static int DebugCoins { get; set; }  = 0;
+    public static int DebugPremium { get; set; }  = 0;
 
     public void Consume(Consumable.ConsumableType type)
     {
@@ -91,6 +95,7 @@ public class PlayerData
 
     public void AddCharacter(string name)
     {
+        Debug.Log($"[PlayerData]Added character: {name}");
         characters.Add(name);
     }
 
@@ -245,18 +250,22 @@ public class PlayerData
 		m_Instance.usedTheme = 0;
 		m_Instance.usedAccessory = -1;
 
-        m_Instance.coins = 0;
-        m_Instance.premium = 0;
+        m_Instance.coins = DebugCoins;
+        m_Instance.premium = DebugPremium;
 
-		m_Instance.characters.Add("Trash Cat");
 		m_Instance.themes.Add("Day");
+
+        m_Instance.tutorialDone = DebugDisableTutorial;
 
         m_Instance.ftueLevel = 0;
         m_Instance.rank = 0;
 
         m_Instance.CheckMissionsCount();
 
-		m_Instance.Save();
+        CharacterDatabase.ReflectDefaultCharacterToPlayerData();
+        ThemeDatabase.ReflectDefaultThemeToPlayerData();
+
+        m_Instance.Save();
 	}
 
     public void Read()

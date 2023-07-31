@@ -71,6 +71,9 @@ public class LoadoutState : AState
     protected int k_UILayer;
     protected readonly Quaternion k_FlippedYAxisRotation = Quaternion.Euler (0f, 180f, 0f);
 
+    protected AsyncOperationHandle<ThemeSetting> savedThemeHandle;
+
+
     public override void Enter(AState from)
     {
         tutorialBlocker.SetActive(!PlayerData.instance.tutorialDone);
@@ -115,7 +118,10 @@ public class LoadoutState : AState
         inventoryCanvas.gameObject.SetActive(false);
 
         if (m_Character != null) Addressables.ReleaseInstance(m_Character);
-
+        if (savedThemeHandle.IsValid())
+        {
+            Addressables.Release(savedThemeHandle);
+        }
         GameState gs = to as GameState;
 
         skyMeshFilter.gameObject.SetActive(false);
@@ -177,7 +183,8 @@ public class LoadoutState : AState
 
 	public void GoToStore()
 	{
-        UnityEngine.SceneManagement.SceneManager.LoadScene(k_ShopSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
+        AddressablesWrapper.instance.LoadSceneAsync("Shop.unity", UnityEngine.SceneManagement.LoadSceneMode.Additive);
+        // UnityEngine.SceneManagement.SceneManager.LoadScene(k_ShopSceneName, UnityEngine.SceneManagement.LoadSceneMode.Additive);
 	}
 
     public void ChangeCharacter(int dir)
@@ -220,13 +227,31 @@ public class LoadoutState : AState
 
     public IEnumerator PopulateTheme()
     {
-        ThemeData t = null;
+        ThemeSetting t = null;
+
+        AsyncOperationHandle<ThemeSetting> themeHandle = new AsyncOperationHandle<ThemeSetting>();
 
         while (t == null)
         {
-            t = ThemeDatabase.GetThemeData(PlayerData.instance.themes[PlayerData.instance.usedTheme]);
+            var data = ThemeDatabase.GetThemeData(PlayerData.instance.themes[PlayerData.instance.usedTheme]);
+            if(data != null)
+            {
+                themeHandle = AddressablesWrapper.instance.LoadAssetAsync<ThemeSetting>(data.GetSettingAddress());
+                yield return themeHandle;
+                if(themeHandle.Result != null)
+                {
+                    t = themeHandle.Result;
+                    break;
+                }
+            }
             yield return null;
         }
+
+        if(savedThemeHandle.IsValid())
+        {
+            Addressables.Release(savedThemeHandle);
+        }
+        savedThemeHandle = themeHandle;
 
         themeNameDisplay.text = t.themeName;
 		themeIcon.sprite = t.themeIcon;
@@ -247,60 +272,73 @@ public class LoadoutState : AState
             GameObject newChar = null;
             while (newChar == null)
             {
-                Character c = CharacterDatabase.GetCharacter(PlayerData.instance.characters[PlayerData.instance.usedCharacter]);
+                var data = CharacterDatabase.GetCharacter(PlayerData.instance.characters[PlayerData.instance.usedCharacter]);
 
-                if (c != null)
+                if (data != null)
                 {
-                    m_OwnedAccesories.Clear();
-                    for (int i = 0; i < c.accessories.Length; ++i)
+                    var addressName = data.GetObjectAddress();
+                    var charaOp = AddressablesWrapper.instance.LoadAssetAsync<GameObject>(addressName);
+                    yield return charaOp;
+
+                    var c = charaOp.Result.GetComponent<Character>();
+
+                    if(c != null)
                     {
-						// Check which accessories we own.
-                        string compoundName = c.characterName + ":" + c.accessories[i].accessoryName;
-                        if (PlayerData.instance.characterAccessories.Contains(compoundName))
+                        m_OwnedAccesories.Clear();
+                        for (int i = 0; i < c.accessories.Length; ++i)
                         {
-                            m_OwnedAccesories.Add(i);
+                            // Check which accessories we own.
+                            string compoundName = c.characterName + ":" + c.accessories[i].accessoryName;
+                            if (PlayerData.instance.characterAccessories.Contains(compoundName))
+                            {
+                                m_OwnedAccesories.Add(i);
+                            }
                         }
+
+                        Vector3 pos = charPosition.transform.position;
+                        if (m_OwnedAccesories.Count > 0)
+                        {
+                            pos.x = k_OwnedAccessoriesCharacterOffset;
+                        }
+                        else
+                        {
+                            pos.x = 0.0f;
+                        }
+                        charPosition.transform.position = pos;
+
+                        accessoriesSelector.gameObject.SetActive(m_OwnedAccesories.Count > 0);
+
+                        AsyncOperationHandle op = Addressables.InstantiateAsync(addressName);
+                        yield return op;
+                        if (op.Result == null || !(op.Result is GameObject))
+                        {
+                            Debug.LogWarning(string.Format("Unable to load character {0}.", c.characterName));
+                            yield break;
+                        }
+                        newChar = op.Result as GameObject;
+                        Helpers.SetRendererLayerRecursive(newChar, k_UILayer);
+                        newChar.transform.SetParent(charPosition, false);
+                        newChar.transform.rotation = k_FlippedYAxisRotation;
+
+                        if (m_Character != null)
+                            Addressables.ReleaseInstance(m_Character);
+
+                        m_Character = newChar;
+                        charNameDisplay.text = c.characterName;
+                        Debug.Log($"Loaded character name: {c.characterName}");
+
+                        m_Character.transform.localPosition = Vector3.right * 1000;
+                        //animator will take a frame to initialize, during which the character will be in a T-pose.
+                        //So we move the character off screen, wait that initialised frame, then move the character back in place.
+                        //That avoid an ugly "T-pose" flash time
+                        yield return new WaitForEndOfFrame();
+                        m_Character.transform.localPosition = Vector3.zero;
+
+                        SetupAccessory();
+
+                        Addressables.Release(charaOp);
                     }
 
-                    Vector3 pos = charPosition.transform.position;
-                    if (m_OwnedAccesories.Count > 0)
-                    {
-                        pos.x = k_OwnedAccessoriesCharacterOffset;
-                    }
-                    else
-                    {
-                        pos.x = 0.0f;
-                    }
-                    charPosition.transform.position = pos;
-
-                    accessoriesSelector.gameObject.SetActive(m_OwnedAccesories.Count > 0);
-
-                    AsyncOperationHandle op = Addressables.InstantiateAsync(c.characterName);
-                    yield return op;
-                    if (op.Result == null || !(op.Result is GameObject))
-                    {
-                        Debug.LogWarning(string.Format("Unable to load character {0}.", c.characterName));
-                        yield break;
-                    }
-                    newChar = op.Result as GameObject;
-                    Helpers.SetRendererLayerRecursive(newChar, k_UILayer);
-					newChar.transform.SetParent(charPosition, false);
-                    newChar.transform.rotation = k_FlippedYAxisRotation;
-
-                    if (m_Character != null)
-                        Addressables.ReleaseInstance(m_Character);
-
-                    m_Character = newChar;
-                    charNameDisplay.text = c.characterName;
-
-                    m_Character.transform.localPosition = Vector3.right * 1000;
-                    //animator will take a frame to initialize, during which the character will be in a T-pose.
-                    //So we move the character off screen, wait that initialised frame, then move the character back in place.
-                    //That avoid an ugly "T-pose" flash time
-                    yield return new WaitForEndOfFrame();
-                    m_Character.transform.localPosition = Vector3.zero;
-
-                    SetupAccessory();
                 }
                 else
                     yield return new WaitForSeconds(1.0f);

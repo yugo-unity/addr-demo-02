@@ -56,7 +56,7 @@ public class TrackManager : MonoBehaviour
     public float parallaxRatio = 0.5f;
 
     [Header("Tutorial")]
-    public ThemeData tutorialThemeData;
+    public string tutorialThemeName;
 
     public System.Action<TrackSegment> newSegmentCreated;
     public System.Action<TrackSegment> currentSegementChanged;
@@ -75,7 +75,7 @@ public class TrackManager : MonoBehaviour
 
     public TrackSegment currentSegment { get { return m_Segments[0]; } }
     public List<TrackSegment> segments { get { return m_Segments; } }
-    public ThemeData currentTheme { get { return m_CurrentThemeData; } }
+    public ThemeSetting currentTheme { get { return m_CurrentThemeData; } }
 
     public bool isMoving { get { return m_IsMoving; } }
     public bool isRerun { get { return m_Rerun; } set { m_Rerun = value; } }
@@ -105,7 +105,7 @@ public class TrackManager : MonoBehaviour
     protected List<TrackSegment> m_PastSegments = new List<TrackSegment>();
     protected int m_SafeSegementLeft;
 
-    protected ThemeData m_CurrentThemeData;
+    protected ThemeSetting m_CurrentThemeData;
     protected int m_CurrentZone;
     protected float m_CurrentZoneDistance;
     protected int m_PreviousSegment = -1;
@@ -192,16 +192,19 @@ public class TrackManager : MonoBehaviour
 
             //Addressables 1.0.1-preview
             // Spawn the player
-            var op = Addressables.InstantiateAsync(PlayerData.instance.characters[PlayerData.instance.usedCharacter],
+            Debug.Log($"InstantiateAsync character name: {PlayerData.instance.characters[PlayerData.instance.usedCharacter]}");
+            var character = CharacterDatabase.GetCharacter(PlayerData.instance.characters[PlayerData.instance.usedCharacter]);
+            var objectAddress = character.GetObjectAddress();
+            var charOp = Addressables.InstantiateAsync(objectAddress,
                 Vector3.zero,
                 Quaternion.identity);
-            yield return op;
-            if (op.Result == null || !(op.Result is GameObject))
+            yield return charOp;
+            if (charOp.Result == null || !(charOp.Result is GameObject))
             {
                 Debug.LogWarning(string.Format("Unable to load character {0}.", PlayerData.instance.characters[PlayerData.instance.usedCharacter]));
                 yield break;
             }
-            Character player = op.Result.GetComponent<Character>();
+            Character player = charOp.Result.GetComponent<Character>();
 
             player.SetupAccesory(PlayerData.instance.usedAccessory);
 
@@ -215,10 +218,24 @@ public class TrackManager : MonoBehaviour
             player.transform.SetParent(characterController.characterCollider.transform, false);
             Camera.main.transform.SetParent(characterController.transform, true);
 
+
+            ThemeData themeData = null;
+
             if (m_IsTutorial)
-                m_CurrentThemeData = tutorialThemeData;
+                themeData = ThemeDatabase.GetThemeData(tutorialThemeName);
             else
-                m_CurrentThemeData = ThemeDatabase.GetThemeData(PlayerData.instance.themes[PlayerData.instance.usedTheme]);
+                themeData = ThemeDatabase.GetThemeData(PlayerData.instance.themes[PlayerData.instance.usedTheme]);
+
+            var themeOp = Addressables.LoadAssetAsync<ThemeSetting>(themeData.GetSettingAddress());
+            yield return themeOp;
+            if (themeOp.Result == null || !(themeOp.Result is ThemeSetting))
+            {
+                Debug.LogWarning(string.Format("Unable to load theme {0}.", themeData.Name));
+                yield break;
+            }
+
+            m_CurrentThemeData = themeOp.Result;
+
 
             m_CurrentZone = 0;
             m_CurrentZoneDistance = 0;

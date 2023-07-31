@@ -16,43 +16,51 @@ public class ShopCharacterList : ShopList
             Destroy(t.gameObject);
         }
 
-        foreach(KeyValuePair<string, Character> pair in CharacterDatabase.dictionary)
+        foreach(KeyValuePair<string, CharacterData> pair in CharacterDatabase.dictionary)
         {
-            Character c = pair.Value;
-            if (c != null)
+            var data = pair.Value;
+            if (data != null)
             {
-                prefabItem.InstantiateAsync().Completed += (op) =>
+                AddressablesWrapper.instance.LoadAssetAsync<GameObject>(data.GetObjectAddress()).Completed += (charaOp) =>
                 {
-                    if (op.Result == null || !(op.Result is GameObject))
+                    var c = charaOp.Result.GetComponent<Character>();
+
+                    prefabItem.InstantiateAsync().Completed += (op) =>
                     {
-                        Debug.LogWarning(string.Format("Unable to load character shop list {0}.", prefabItem.Asset.name));
-                        return;
-                    }
-                    GameObject newEntry = op.Result;
-                    newEntry.transform.SetParent(listRoot, false);
+                        if (op.Result == null || !(op.Result is GameObject))
+                        {
+                            Debug.LogWarning(string.Format("Unable to load character shop list {0}.", prefabItem.Asset.name));
+                            return;
+                        }
+                        GameObject newEntry = op.Result;
+                        newEntry.transform.SetParent(listRoot, false);
 
-                    ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
+                        ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
-                    itm.icon.sprite = c.icon;
-                    itm.nameText.text = c.characterName;
-                    itm.pricetext.text = c.cost.ToString();
+                        itm.icon.sprite = c.icon;
+                        itm.nameText.text = c.characterName;
+                        itm.pricetext.text = c.cost.ToString();
 
-                    itm.buyButton.image.sprite = itm.buyButtonSprite;
+                        itm.buyButton.image.sprite = itm.buyButtonSprite;
 
-                    if (c.premiumCost > 0)
-                    {
-                        itm.premiumText.transform.parent.gameObject.SetActive(true);
-                        itm.premiumText.text = c.premiumCost.ToString();
-                    }
-                    else
-                    {
-                        itm.premiumText.transform.parent.gameObject.SetActive(false);
-                    }
+                        if (c.premiumCost > 0)
+                        {
+                            itm.premiumText.transform.parent.gameObject.SetActive(true);
+                            itm.premiumText.text = c.premiumCost.ToString();
+                        }
+                        else
+                        {
+                            itm.premiumText.transform.parent.gameObject.SetActive(false);
+                        }
 
-                    itm.buyButton.onClick.AddListener(delegate() { Buy(c); });
+                        itm.buyButton.onClick.AddListener(delegate () { Buy(c); });
 
-                    m_RefreshCallback += delegate() { RefreshButton(itm, c); };
-                    RefreshButton(itm, c);
+                        m_RefreshCallback += delegate () { RefreshButton(itm, c); };
+                        RefreshButton(itm, c);
+
+
+                        Addressables.Release(charaOp);
+                    };
                 };
             }
         }

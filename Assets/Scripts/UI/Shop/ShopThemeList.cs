@@ -33,32 +33,41 @@ public class ShopThemeList : ShopList
 
                     ShopItemListItem itm = newEntry.GetComponent<ShopItemListItem>();
 
-                    itm.nameText.text = theme.themeName;
-                    itm.pricetext.text = theme.cost.ToString();
-                    itm.icon.sprite = theme.themeIcon;
-
-                    if (theme.premiumCost > 0)
+                    AddressablesWrapper.instance.LoadAssetAsync<ThemeSetting>(theme.GetSettingAddress()).Completed += (themeOp) =>
                     {
-                        itm.premiumText.transform.parent.gameObject.SetActive(true);
-                        itm.premiumText.text = theme.premiumCost.ToString();
-                    }
-                    else
-                    {
-                        itm.premiumText.transform.parent.gameObject.SetActive(false);
-                    }
+                        if (themeOp.Result == null || !(themeOp.Result is ThemeSetting))
+                        {
+                            Debug.LogWarning(string.Format("Unable to load theme{0}.", theme.Name));
+                            return;
+                        }
 
-                    itm.buyButton.onClick.AddListener(delegate() { Buy(theme); });
+                        itm.nameText.text = themeOp.Result.themeName;
+                        itm.pricetext.text = themeOp.Result.cost.ToString();
+                        itm.icon.sprite = themeOp.Result.themeIcon;
 
-                    itm.buyButton.image.sprite = itm.buyButtonSprite;
+                        if (themeOp.Result.premiumCost > 0)
+                        {
+                            itm.premiumText.transform.parent.gameObject.SetActive(true);
+                            itm.premiumText.text = themeOp.Result.premiumCost.ToString();
+                        }
+                        else
+                        {
+                            itm.premiumText.transform.parent.gameObject.SetActive(false);
+                        }
 
-                    RefreshButton(itm, theme);
-                    m_RefreshCallback += delegate() { RefreshButton(itm, theme); };
+                        itm.buyButton.onClick.AddListener(delegate () { Buy(themeOp.Result); });
+
+                        itm.buyButton.image.sprite = itm.buyButtonSprite;
+
+                        RefreshButton(itm, themeOp.Result);
+                        m_RefreshCallback += delegate () { RefreshButton(itm, themeOp.Result); };
+                    };
                 };
             }
         }
     }
 
-	protected void RefreshButton(ShopItemListItem itm, ThemeData theme)
+	protected void RefreshButton(ShopItemListItem itm, ThemeSetting theme)
 	{
 		if (theme.cost > PlayerData.instance.coins)
 		{
@@ -89,7 +98,7 @@ public class ShopThemeList : ShopList
 	}
 
 
-	public void Buy(ThemeData t)
+	public void Buy(ThemeSetting t)
     {
         PlayerData.instance.coins -= t.cost;
 		PlayerData.instance.premium -= t.premiumCost;

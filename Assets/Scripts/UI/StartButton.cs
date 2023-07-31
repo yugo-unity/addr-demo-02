@@ -25,6 +25,8 @@ public class StartButton : MonoBehaviour
 #if UNITY_PURCHASING
         var module = StandardPurchasingModule.Instance();
 #endif
-        SceneManager.LoadScene("main");
+
+        AddressablesWrapper.instance.LoadSceneAsync("Main.unity");
+        // SceneManager.LoadScene("main");
     }
 }

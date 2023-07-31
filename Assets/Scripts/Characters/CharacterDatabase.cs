@@ -8,18 +8,21 @@ using System.Collections.Generic;
 /// </summary>
 public class CharacterDatabase
 {
-    static protected Dictionary<string, Character> m_CharactersDict;
+    static protected Dictionary<string, CharacterData> m_CharactersDict;
 
-    static public Dictionary<string, Character> dictionary {  get { return m_CharactersDict; } }
+    static public Dictionary<string, CharacterData> dictionary {  get { return m_CharactersDict; } }
 
     static protected bool m_Loaded = false;
     static public bool loaded { get { return m_Loaded; } }
 
-    static public Character GetCharacter(string type)
+    static public CharacterData GetCharacter(string type)
     {
-        Character c;
+        CharacterData c;
         if (m_CharactersDict == null || !m_CharactersDict.TryGetValue(type, out c))
+        {
+            Debug.Log($"[CharacterDatabase]{type} is not found in dictionart.");
             return null;
+        }
 
         return c;
     }
@@ -28,18 +31,33 @@ public class CharacterDatabase
     {
         if (m_CharactersDict == null)
         {
-            m_CharactersDict = new Dictionary<string, Character>();
+            m_CharactersDict = new Dictionary<string, CharacterData>();
 
-            yield return Addressables.LoadAssetsAsync<GameObject>("characters", op =>
+            yield return Addressables.LoadAssetsAsync<CharacterData>("characters", op =>
             {
-                Character c = op.GetComponent<Character>();
-                if (c != null)
+                if (op != null)
                 {
-                    m_CharactersDict.Add(c.characterName, c);
+                    m_CharactersDict.Add(op.Name, op);
                 }
             });
 
             m_Loaded = true;
+
+            ReflectDefaultCharacterToPlayerData();
+
+            Debug.Log("Loaded Character Database.");
+        }
+    }
+
+    static public void ReflectDefaultCharacterToPlayerData()
+    {
+        foreach(var pair in m_CharactersDict)
+        {
+            var data = pair.Value;
+            if (data.IsOwnOnStart && !PlayerData.instance.characters.Contains(data.Name))
+            {
+                PlayerData.instance.AddCharacter(data.Name);
+            }
         }
     }
 }

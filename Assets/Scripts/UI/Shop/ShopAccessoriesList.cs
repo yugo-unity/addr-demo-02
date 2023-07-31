@@ -11,7 +11,7 @@ public class ShopAccessoriesList : ShopList
 {
     public AssetReference headerPrefab;
 
-    List<Character> m_CharacterList = new List<Character>();
+    List<CharacterData> m_CharacterList = new List<CharacterData>();
     public override void Populate()
     {
 		m_RefreshCallback = null;
@@ -22,12 +22,13 @@ public class ShopAccessoriesList : ShopList
         }
 
         m_CharacterList.Clear();
-        foreach (KeyValuePair<string, Character> pair in CharacterDatabase.dictionary)
+        foreach (KeyValuePair<string, CharacterData> pair in CharacterDatabase.dictionary)
         {
-            Character c = pair.Value;
+            var c = pair.Value;
 
-            if (c.accessories !=null && c.accessories.Length > 0)
-                m_CharacterList.Add(c);
+            // if (c.accessories !=null && c.accessories.Length > 0)
+            //     m_CharacterList.Add(c);
+            m_CharacterList.Add(c);
         }
 
         headerPrefab.InstantiateAsync().Completed += (op) =>
@@ -44,23 +45,28 @@ public class ShopAccessoriesList : ShopList
         }
         else
         {
-            Character c = m_CharacterList[currentIndex];
+            var c = m_CharacterList[currentIndex];
 
             GameObject header = op.Result;
             header.transform.SetParent(listRoot, false);
             ShopItemListItem itmHeader = header.GetComponent<ShopItemListItem>();
-            itmHeader.nameText.text = c.characterName;
+            itmHeader.nameText.text = c.Name;
 
-            prefabItem.InstantiateAsync().Completed += (innerOp) =>
+            AddressablesWrapper.instance.LoadAssetAsync<GameObject>(c.GetObjectAddress()).Completed += (charaOp) =>
             {
-	            LoadedAccessory(innerOp, currentIndex, 0);
+                prefabItem.InstantiateAsync().Completed += (innerOp) =>
+                {
+                    var c = charaOp.Result.GetComponent<Character>();
+                    LoadedAccessory(innerOp, currentIndex, 0, c);
+
+                    Addressables.Release(charaOp);
+                };
             };
         }
     }
 
-    void LoadedAccessory(AsyncOperationHandle<GameObject> op, int characterIndex, int accessoryIndex)
+    void LoadedAccessory(AsyncOperationHandle<GameObject> op, int characterIndex, int accessoryIndex, Character c)
     {
-	    Character c = m_CharacterList[characterIndex];
 	    if (op.Result == null || !(op.Result is GameObject))
 	    {
 		    Debug.LogWarning(string.Format("Unable to load shop accessory list {0}.", prefabItem.Asset.name));
@@ -118,7 +124,7 @@ public class ShopAccessoriesList : ShopList
 	    {
 		    prefabItem.InstantiateAsync().Completed += (innerOp) =>
 		    {
-			    LoadedAccessory(innerOp, characterIndex, accessoryIndex);
+			    LoadedAccessory(innerOp, characterIndex, accessoryIndex, c);
 		    };
 	    }
     }

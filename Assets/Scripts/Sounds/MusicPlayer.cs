@@ -37,7 +37,7 @@ public class MusicPlayer : MonoBehaviour
 
 	void Start()
 	{
-		PlayerData.Create ();
+		// PlayerData.Create();
 
 		if (PlayerData.instance.masterVolume > float.MinValue) 
 		{
