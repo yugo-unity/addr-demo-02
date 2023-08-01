@@ -61,10 +61,8 @@ public class AddressablesWrapper : MonoBehaviour
         sw.Stop();
         Debug.Log($"Addressalbes.LoadSceneAsync completed. {sw.Elapsed}");
         sw.Reset();
-
-        Debug.Log($"Profiler.GetTotalReservedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong()}");
-        Debug.Log($"Profiler.GetTotalAllocatedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong()}");
-        Debug.Log($"Profiler.GetTotalUnusedReservedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalUnusedReservedMemoryLong()}");
+        
+        ProfileMemory();
     }
 
     public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(object key)
@@ -81,5 +79,18 @@ public class AddressablesWrapper : MonoBehaviour
         swAsset.Stop();
         Debug.Log($"Addressalbes.LoadAssetAsync completed. {sw.Elapsed}");
         swAsset.Reset();
+    }
+
+    public void ProfileMemory()
+    {
+        Resources.UnloadUnusedAssets();
+        Invoke(nameof(ProfileMemoryImpl), 2.0f);
+    }
+
+    private void ProfileMemoryImpl()
+    {
+        Debug.Log($"Profiler.GetTotalReservedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalReservedMemoryLong()}");
+        Debug.Log($"Profiler.GetTotalAllocatedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong()}");
+        Debug.Log($"Profiler.GetTotalUnusedReservedMemoryLong: {UnityEngine.Profiling.Profiler.GetTotalUnusedReservedMemoryLong()}");
     }
 }
