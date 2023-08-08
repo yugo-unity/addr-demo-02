@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.AddressableAssets;
 #if UNITY_ADS
 using UnityEngine.Advertisements;
 #endif
@@ -96,7 +97,7 @@ public class ShopUI : MonoBehaviour
 
 	public void CloseScene()
 	{
-        SceneManager.UnloadSceneAsync("shop");
+        SceneManager.UnloadSceneAsync("Shop");
 	    LoadoutState loadoutState = GameManager.instance.topState as LoadoutState;
 	    if(loadoutState != null)
         {
