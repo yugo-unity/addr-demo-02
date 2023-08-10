@@ -412,38 +412,13 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 37d5e1f1666e7f643891a80f6d37b371
-    m_Address: Assets/Sounds/Stems/STEMSSpeed4SynthMono.ogg
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: fc0811928bd2d9d449d4eae17f4f4b3d
-    m_Address: Assets/Sounds/Stems/STEMSSpeed1HatsMono.ogg
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 89acdb637cc78c5418652a27c65514ba
     m_Address: Assets/Sounds/SFX/ButtonPresses.ogg
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e5b9826496c6c0141801fef8a5a0eeab
-    m_Address: Assets/Sounds/Stems/STEMSSpeed3StringsMono.ogg
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 1588137430bfbab4b9a00ba3b220b82b
     m_Address: Assets/Sounds/Music/MenuTheme.ogg
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 6db87f5f2928abe40a08ef1016e3c830
-    m_Address: Assets/Sounds/Stems/STEMSSpeed1BongosMono.ogg
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: e332926f9f9720947b646c7c3c65902f
-    m_Address: Assets/Sounds/Stems/STEMSSpeed2ChoirMono.ogg
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
